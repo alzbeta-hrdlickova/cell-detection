@@ -1,87 +1,88 @@
-%% Naètení dat a masek (ground truth)
-location= '/Users/betyadamkova/Desktop/final_matlab/data';   % cesta k datùm
+%% NaÄtenÃ­ dat a masek (ground truth)
+
+location= '/Users/betyadamkova/Desktop/final_matlab/data';   % cesta k datÅ¯m
 addpath(location);
 img_dat = imageDatastore(location);
-l=length(img_dat.Files);  % poèet dat
+l=length(img_dat.Files);  % poÄet dat
 
 location_m= '/Users/betyadamkova/Desktop/final_matlab/output'; % cesta k ground truth
 addpath(location_m);
 img_dat_m = imageDatastore(location_m);
 
-%% Vytvoøení prosotoru pro ukládání dat/ulození do promìnnıch
+%% VytvoÅ™enÃ­ prosotoru pro uklÃ¡dÃ¡nÃ­ dat/ulozenÃ­ do promÄ›nnÃ½ch
 mask=[];
 jaccard=[];
 Img = [];
 ground_t=[];
 JI_all=[];
 op=1;
-%% Ulození dat do promìnnıch 
+%% UlozenÃ­ dat do promÄ›nnÃ½ch 
 for i=1:l
   images{i} = imread(sprintf('data%d.tiff',i));
-  Img = (cat(3, Img, images{i})); % obrazová data ulozena do 3D matice
+  Img = (cat(3, Img, images{i})); % obrazovÃ¡ data ulozena do 3D matice
  images_gt{i} = imread(sprintf('output%d.tiff',i));
  ground_t = (cat(3, ground_t, images_gt{i})); 
- ground_t=logical(ground_t);   % ground truth uloeny do 3D matice
+ ground_t=logical(ground_t);   % ground truth uloÅ¾eny do 3D matice
 end
 
-%% For cyklus pro vıbìr obrazu
-[x,y,z]=size(Img);  % velikost obrazové matice
+%% For cyklus pro vÃ½bÄ›r obrazu
+[x,y,z]=size(Img);  % velikost obrazovÃ© matice
 jj=1;
-for snimek=1:z  % for cyklus prochází vsechny obrazy
-Img2=Img(:,:,snimek);       % vıbìr obrazu
-im_maska=ground_t(:,:,snimek);   % vıbìr ground_t
+for snimek=1:z  % for cyklus prochÃ¡zÃ­ vsechny obrazy
+Img2=Img(:,:,snimek);       % vÃ½bÄ›r obrazu
+im_maska=ground_t(:,:,snimek);   % vÃ½bÄ›r ground_t
 
-%% Úprava binárního obrazu 
-img=medfilt2(Img2,[7,7]); % filtrace mediánovım filtrem maska 7x7
+%% Ãšprava binÃ¡rnÃ­ho obrazu 
+img=medfilt2(Img2,[7,7]); % filtrace mediÃ¡novÃ½m filtrem maska 7x7
 Img_eq = adapthisteq(img); % ekvalizace histogramu obrazu
-multi=multithresh(Img_eq,5); % prahování (vıbìr prvního prahu)
-binar = im2bw(Img_eq, multi(1,1));         % pøevod na binární obraz s prvním prahem z multithresh
-binar_fill = imfill(binar,'holes');       % vyplnìní dìr v obraze
-binar_open = imopen(binar_fill, ones(3,3)); % operace otevøení s maskou 3x3
-binar_final = bwareaopen(binar_open, 50);   % odstranìní malıch objektù
+multi=multithresh(Img_eq,5); % prahovÃ¡nÃ­ (vÃ½bÄ›r prvnÃ­ho prahu)
+binar = im2bw(Img_eq, multi(1,1));         % pÅ™evod na binÃ¡rnÃ­ obraz s prvnÃ­m prahem z multithresh
+binar_fill = imfill(binar,'holes');       % vyplnÄ›nÃ­ dÄ›r v obraze
+binar_open = imopen(binar_fill, ones(3,3)); % operace otevÅ™enÃ­ s maskou 3x3
+binar_final = bwareaopen(binar_open, 50);   % odstranÄ›nÃ­ malÃ½ch objektÅ¯
 
-%% Nalezení støedù bunìk (jader)
-cell_center = imextendedmax(Img_eq, 0.2);   % oblastní maximum (spojené pixely se stejnou intensitou) z H-max transform, na základì èlánkù (napø: https://www.osapublishing.org/boe/fulltext.cfm?uri=boe-7-8-3111&id=348030)
-% H maxima potlaèuje všechny intenzitní maxima pod danou hranicí, z toho je
-% pak hledáno oblastní maximum, prah zde udává míru odlišnosti pixelù aby byly uvaovány za maxima
+%% NalezenÃ­ stÅ™edÅ¯ bunÄ›k (jader)
+cell_center = imextendedmax(Img_eq, 0.2);   % oblastnÃ­ maximum (spojenÃ© pixely se stejnou intensitou) z H-max transform, na zÃ¡kladÄ› ÄlÃ¡nkÅ¯ (napÅ™: https://www.osapublishing.org/boe/fulltext.cfm?uri=boe-7-8-3111&id=348030)
+% H maxima potlaÄuje vÅ¡echny intenzitnÃ­ maxima pod danou hranicÃ­, z toho je
+% pak hledÃ¡no oblastnÃ­ maximum, prah zde udÃ¡vÃ¡ mÃ­ru odliÅ¡nosti pixelÅ¯ aby byly uvaÅ¾ovÃ¡ny za maxima
 
-cell_center = imclose(cell_center, ones(5,5));  % operace uzavøení s maskou 5x5 kvùli pøipojení malıch bodù
-cell_center = imfill(cell_center, 'holes');     % vyplnìní dìr
+cell_center = imclose(cell_center, ones(5,5));  % operace uzavÅ™enÃ­ s maskou 5x5 kvÅ¯li pÅ™ipojenÃ­ malÃ½ch bodÅ¯
+cell_center = imfill(cell_center, 'holes');     % vyplnÄ›nÃ­ dÄ›r
 %  center = imoverlay(Img_eq, cell_center,'r');
-%% Aplikování watershed
-I_eq_c = imcomplement(Img_eq);  % obrácené k Img_eq (doplnìk)
-I_mod = imimposemin(I_eq_c, ~binar_final | cell_center); % minimum v šedotónovém obrazu pouze v místech jednièek binárního obrazu
-W = watershed(I_mod,8);   % aplikování metody watershed s 8-mi okolím
+%% AplikovÃ¡nÃ­ watershed
+I_eq_c = imcomplement(Img_eq);  % obrÃ¡cenÃ© k Img_eq (doplnÄ›k)
+I_mod = imimposemin(I_eq_c, ~binar_final | cell_center); % minimum v Å¡edotÃ³novÃ©m obrazu pouze v mÃ­stech jedniÄek binÃ¡rnÃ­ho obrazu
+W = watershed(I_mod,8);   % aplikovÃ¡nÃ­ metody watershed s 8-mi okolÃ­m
 W=im2double(W);
 
-%% Zpracování dat k vıpoètu podobnosti
-minimum=mode(W(:));     % vıbìr nejèastìjší hodnoty (hodnota pozadí)
-W(W>minimum)=1;         % všechny hodnoty vìtší ne pozadí zmìnìny na hodnotu jedna
-W(W~=1)=0;              % pozadí s hodnotou nula
-W=logical(W);           % pøevod na logical
-W_vysledna{1,jj}=W;     % ulození všech vysegmentovanıch masek
+%% ZpracovÃ¡nÃ­ dat k vÃ½poÄtu podobnosti
+minimum=mode(W(:));     % vÃ½bÄ›r nejÄastÄ›jÅ¡Ã­ hodnoty (hodnota pozadÃ­)
+W(W>minimum)=1;         % vÅ¡echny hodnoty vÄ›tÅ¡Ã­ neÅ¾ pozadÃ­ zmÄ›nÄ›ny na hodnotu jedna
+W(W~=1)=0;              % pozadÃ­ s hodnotou nula
+W=logical(W);           % pÅ™evod na logical
+W_vysledna{1,jj}=W;     % ulozenÃ­ vÅ¡ech vysegmentovanÃ½ch masek
 
 jj=jj+1;
 o=1;oo=1;j=1;
 
-Label1=bwlabel(W,4); % oznaèení bunìk (oèíslování)
-Label2=bwlabel(im_maska,4);  % oznaèení bunìk v ground_t 
+Label1=bwlabel(W,4); % oznaÄenÃ­ bunÄ›k (oÄÃ­slovÃ¡nÃ­)
+Label2=bwlabel(im_maska,4);  % oznaÄenÃ­ bunÄ›k v ground_t 
 L1=Label1;
 L2=Label2;
-cells_water =max(Label1(:)); % zjistìní poètu bunìk po watershed
-cells_gt=max(Label2(:));     % zjistìní poètu bunìk v ground_t
+cells_water =max(Label1(:)); % zjistÄ›nÃ­ poÄtu bunÄ›k po watershed
+cells_gt=max(Label2(:));     % zjistÄ›nÃ­ poÄtu bunÄ›k v ground_t
 
 
-for m=1:cells_water  % dva for cykly ke zjistìní pøekryvu bunìk (zda je splnìna podmínka poloviny)
+for m=1:cells_water  % dva for cykly ke zjistÄ›nÃ­ pÅ™ekryvu bunÄ›k (zda je splnÄ›na podmÃ­nka poloviny)
     for n=1:cells_gt
        Label1=L1;
        Label2=L2;
-       Label1(Label1~=m)=0; Label1=logical(Label1);  % Nahrazení okolí buòky nulami (krom èísla m=znaèení aktuální buòky)
+       Label1(Label1~=m)=0; Label1=logical(Label1);  % NahrazenÃ­ okolÃ­ buÅˆky nulami (krom ÄÃ­sla m=znaÄenÃ­ aktuÃ¡lnÃ­ buÅˆky)
        Label2(Label2~=n)=0; Label2=logical(Label2);
-       jaccIn = sum(Label1(:) & Label2(:)) / sum(Label1(:) | Label2(:));  % vıpoèet jaccarda pro dvojice bunìk    
+       jaccIn = sum(Label1(:) & Label2(:)) / sum(Label1(:) | Label2(:));  % vÃ½poÄet jaccarda pro dvojice bunÄ›k    
           
            if jaccIn>0.5
-                jaccard(1,o)=jaccIn;  % ukládání hodnot jaccarda pro konkrétní buòku
+                jaccard(1,o)=jaccIn;  % uklÃ¡dÃ¡nÃ­ hodnot jaccarda pro konkrÃ©tnÃ­ buÅˆku
                 o=o+1;
            else
            end
@@ -90,18 +91,18 @@ for m=1:cells_water  % dva for cykly ke zjistìní pøekryvu bunìk (zda je splnìna 
 
     jacc_img=[];
     
-    if isempty(jaccard)   % pokud je se vsemi buòkami hodnota nula, doplní se nula jako vısledek (aby se neobjevovalo NaN)
+    if isempty(jaccard)   % pokud je se vsemi buÅˆkami hodnota nula, doplnÃ­ se nula jako vÃ½sledek (aby se neobjevovalo NaN)
         jacc_img(1,j)=0; 
         
     else
-        jacc_img(1,j)=jaccard;  % ulození vısledné hodnoty za celı obraz
+        jacc_img(1,j)=jaccard;  % ulozenÃ­ vÃ½slednÃ© hodnoty za celÃ½ obraz
     end   
-      jaccard=[];  % vytvoøení nového prázdného prostoru pro ukládání
+      jaccard=[];  % vytvoÅ™enÃ­ novÃ©ho prÃ¡zdnÃ©ho prostoru pro uklÃ¡dÃ¡nÃ­
       o=1;
       j=j+1;
 end
 
- JI_all(1,op)=sum(jacc_img)/cells_water;  % uloení jaccarda ze všech obrazù do jednoho vektoru
+ JI_all(1,op)=sum(jacc_img)/cells_water;  % uloÅ¾enÃ­ jaccarda ze vÅ¡ech obrazÅ¯ do jednoho vektoru
  jacc_img=[];
  j=1;
  op=op+1;

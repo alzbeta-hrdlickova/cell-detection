@@ -1,5 +1,4 @@
 %% Načtení dat a masek (ground truth)
-
 location= '/Users/betyadamkova/Desktop/final_matlab/data';   % cesta k datům
 addpath(location);
 img_dat = imageDatastore(location);
